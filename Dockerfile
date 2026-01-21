@@ -1,9 +1,9 @@
-ARG ALPINE_VERSION="3.18.4"
+ARG ALPINE_VERSION="3.23.2"
 
 # Tor builder
 FROM --platform=$TARGETPLATFORM docker.io/library/alpine:${ALPINE_VERSION} as tor-builder
 
-ARG TOR_VERSION="0.4.8.9"
+ARG TOR_VERSION="0.4.8.21"
 RUN apk add --update --no-cache \
     git build-base automake autoconf make \
     build-base openssl-dev libevent-dev zlib-dev \
@@ -25,27 +25,24 @@ RUN ./configure \
       make && \
       make install
 
-# Build the obfs4 binary (cross-compiling)
-FROM --platform=$BUILDPLATFORM golang:1.20-alpine as obfs-builder
-ARG OBFS_VERSION="obfs4proxy-0.0.14-tor2"
+# Build the lyrebird binary (cross-compiling)
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine as lyrebird-builder
+ARG LYREBIRD_VERSION="lyrebird-0.8.1"
 
-WORKDIR /obfs
+WORKDIR /lyrebird
 RUN apk add --update --no-cache git && \
-      git clone https://gitlab.torproject.org/tpo/anti-censorship/pluggable-transports/lyrebird.git --depth 1 --branch "${OBFS_VERSION}" /obfs
-
-# Build obfs
-RUN mkdir /out
+      git clone https://gitlab.torproject.org/tpo/anti-censorship/pluggable-transports/lyrebird.git --depth 1 --branch "${LYREBIRD_VERSION}" /lyrebird
 
 ARG TARGETOS TARGETARCH
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /out/obfs4proxy ./obfs4proxy
+    make build
 
 # Tor runner
 FROM --platform=$TARGETPLATFORM docker.io/library/alpine:${ALPINE_VERSION} as runner
 
 LABEL \
-      org.opencontainers.image.source "https://github.com/bugfest/tor-docker"
+      org.opencontainers.image.source "https://github.com/rinsecode/tor-docker"
 
 WORKDIR /app
 ENV HOME=/app
@@ -68,7 +65,7 @@ COPY --from=tor-builder /tor/src/config/geoip /usr/local/share/tor/.
 COPY --from=tor-builder /tor/src/config/geoip6 /usr/local/share/tor/.
 
 # install transports
-COPY --from=obfs-builder /out/obfs4proxy /usr/local/bin/.
+COPY --from=lyrebird-builder /lyrebird/lyrebird /usr/local/bin/.
 
 # create service dir (we don't define VOLUME because https://github.com/docker-library/mysql/issues/255
 # and other issues when running as non-root user)
