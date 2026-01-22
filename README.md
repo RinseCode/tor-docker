@@ -7,7 +7,7 @@
 
 Additional transport plugins included in the image:
 
-- `obfs4proxy`
+- `lyrebird`
 
 Tested architectures:
 
