@@ -1,0 +1,22 @@
+# Build the obfs4 binary (cross-compiling)
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine as lyrebird-builder
+ARG LYREBIRD_VERSION="lyrebird-0.8.1"
+
+
+WORKDIR /lyrebird
+
+RUN apk add --update --no-cache git && \
+      git clone https://gitlab.torproject.org/tpo/anti-censorship/pluggable-transports/lyrebird.git --depth 1 --branch "${LYREBIRD_VERSION}" /lyrebird
+
+# Build lyrebird
+ARG TARGETOS TARGETARCH
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-X main.lyrebirdVersion=$(VERSION)" ./cmd/lyrebird && \
+      echo 'user:x:1001:1001:user:/:' > /tmp/passwd
+
+FROM scratch
+USER 1001
+COPY --from=lyrebird-builder /tmp/passwd /etc/passwd
+COPY --from=lyrebird-builder /lyrebird/lyrebird /
+ENTRYPOINT ["/lyrebird"]
