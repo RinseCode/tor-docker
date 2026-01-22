@@ -60,5 +60,5 @@ make quick
 ## Usage
 
 ```shell
-docker pull quay.io/bugfest/tor
+docker pull ghcr.io/rinsecode/tor
 ```
