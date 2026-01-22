@@ -36,7 +36,7 @@ RUN apk add --update --no-cache git && \
 ARG TARGETOS TARGETARCH
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    CGO_ENABLED=0 go build -ldflags="-X main.lyrebirdVersion=$(VERSION)" ./cmd/lyrebird
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-X main.lyrebirdVersion=$(VERSION)" ./cmd/lyrebird
 
 # Tor runner
 FROM --platform=$TARGETPLATFORM docker.io/library/alpine:${ALPINE_VERSION} as runner
