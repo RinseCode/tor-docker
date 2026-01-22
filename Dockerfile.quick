@@ -1,30 +1,29 @@
-ARG ALPINE_VERSION="3.18.4"
+ARG ALPINE_VERSION="3.23.2"
 
 # Build the obfs4 binary (cross-compiling)
-FROM --platform=$BUILDPLATFORM golang:1.20-alpine as obfs-builder
-ARG OBFS_VERSION="obfs4proxy-0.0.14-tor2"
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine as obfs-builder
+ARG LYREBIRD_VERSION="lyrebird-0.8.1"
 
 RUN apk add --update --no-cache git && \
-      git clone https://gitlab.torproject.org/tpo/anti-censorship/pluggable-transports/lyrebird.git --depth 1 --branch "${OBFS_VERSION}" /obfs
+      git clone https://gitlab.torproject.org/tpo/anti-censorship/pluggable-transports/lyrebird.git --depth 1 --branch "${LYREBIRD_VERSION}" /lyrebird
 
-# Build obfs
-RUN mkdir /out
-WORKDIR /obfs
+# Build lyrebird
+WORKDIR /lyrebird
 ARG TARGETOS TARGETARCH
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /out/obfs4proxy ./obfs4proxy
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-X main.lyrebirdVersion=$(VERSION)" ./cmd/lyrebird
 
 # Tor runner
 FROM --platform=$TARGETPLATFORM docker.io/library/alpine:${ALPINE_VERSION} as runner
 
 LABEL \
-      org.opencontainers.image.source "https://github.com/bugfest/tor-docker"
+      org.opencontainers.image.source "https://github.com/rinsecode/tor-docker"
 
 WORKDIR /app
 ENV HOME=/app
 
-ARG TOR_VERSION="0.4.8.9"
+ARG TOR_VERSION="0.4.8.21"
 RUN apk add --update --no-cache \
       tor=~"${TOR_VERSION}" && \
     chmod -R g+w /app /run
@@ -33,7 +32,7 @@ RUN apk add --update --no-cache \
 RUN ln -s /usr/bin/tor /usr/local/bin/tor
 
 # install transports
-COPY --from=obfs-builder /out/obfs4proxy /usr/local/bin/.
+COPY --from=lyrebird-builder /lyrebird/lyrebird /usr/local/bin/.
 
 # create service dir (we don't define VOLUME because https://github.com/docker-library/mysql/issues/255
 # and other issues when running as non-root user)
