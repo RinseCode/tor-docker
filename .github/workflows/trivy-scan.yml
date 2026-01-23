@@ -16,23 +16,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Get tags to scan
-        id: tags
-        run: |
-          # Example: scan the "latest" tag and the most recent tag from GitHub Container Registry
-          REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE="ghcr.io/${REPO_OWNER}/tor"
-          LATEST_TAG="latest"
+    - name: Get tags to scan
+      id: tags
+      run: |
+        REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+        IMAGE="ghcr.io/${REPO_OWNER}/tor"
+        LATEST_TAG="latest"
 
-          # Pull the list of tags (requires `jq` and `curl`)
-          TAGS=$(curl -s "https://ghcr.io/v2/${IMAGE#*/}/tags/list" | jq -r '.tags[]' | sort -Vr)
+        # Build the path that the GHCR API expects: <owner>/tor
+        REPO_PATH="${REPO_OWNER}/tor"
 
-          # Get the most recent non‑latest tag (skip "latest")
-          RECENT_TAG=$(echo "$TAGS" | grep -v '^latest$' | head -n1)
+        # Fetch tags, fail fast if the request isn’t successful
+        RESPONSE=$(curl -sSf "https://ghcr.io/v2/${REPO_PATH}/tags/list")
+        if [[ -z "$RESPONSE" ]]; then
+          echo "Failed to fetch tags from GHCR"
+          exit 1
+        fi
 
-          echo "image=$IMAGE" >> $GITHUB_OUTPUT
-          echo "latest=$LATEST_TAG" >> $GITHUB_OUTPUT
-          echo "recent=$RECENT_TAG" >> $GITHUB_OUTPUT
+        # Extract and sort tags
+        TAGS=$(echo "$RESPONSE" | jq -r '.tags[]' | sort -Vr)
+
+        # Get the most recent non‑latest tag
+        RECENT_TAG=$(echo "$TAGS" | grep -v '^latest$' | head -n1)
+
+        echo "image=$IMAGE" >> $GITHUB_OUTPUT
+        echo "latest=$LATEST_TAG" >> $GITHUB_OUTPUT
+        echo "recent=$RECENT_TAG" >> $GITHUB_OUTPUT
       
       - name: Scan latest tag
         id: scanLatest
