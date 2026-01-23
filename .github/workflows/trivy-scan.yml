@@ -2,9 +2,8 @@ name: Daily Trivy Scan
 
 on:
   schedule:
-    # Runs every day at 02:00 UTC
-    - cron: '0 2 * * *'
-  workflow_dispatch:   # optional: allow manual runs
+    - cron: '0 2 * * *' # Runs every day at 02:00 UTC
+  workflow_dispatch:
 
 jobs:
   trivy-scan:
@@ -36,6 +35,7 @@ jobs:
           echo "recent=$RECENT_TAG" >> $GITHUB_OUTPUT
       
       - name: Scan latest tag
+        id: scanLatest
         continue-on-error: true
         uses: aquasecurity/trivy-action@0.33.1
         with:
@@ -47,6 +47,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
       
       - name: Scan recent tag
+        id: scanRecent
         continue-on-error: true
         uses: aquasecurity/trivy-action@0.33.1
         with:
@@ -56,3 +57,9 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+
+      - name: Fail job if scan failed
+        if: steps.scanLatest.outcome == 'failure' || steps.scanRecent.outcome == 'failure'
+        run: |
+          echo "::error ::One or more checks failed."
+          exit 1

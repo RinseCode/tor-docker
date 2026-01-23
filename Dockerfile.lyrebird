@@ -1,12 +1,12 @@
 # Build the obfs4 binary (cross-compiling)
 FROM --platform=$BUILDPLATFORM golang:1.25-alpine as lyrebird-builder
-ARG LYREBIRD_VERSION="lyrebird-0.8.1"
+ARG LYREBIRD_VERSION="0.8.1"
 
 
 WORKDIR /lyrebird
 
 RUN apk add --update --no-cache git && \
-      git clone https://gitlab.torproject.org/tpo/anti-censorship/pluggable-transports/lyrebird.git --depth 1 --branch "${LYREBIRD_VERSION}" /lyrebird
+      git clone https://gitlab.torproject.org/tpo/anti-censorship/pluggable-transports/lyrebird.git --depth 1 --branch lyrebird-"${LYREBIRD_VERSION}" /lyrebird
 
 # Build lyrebird
 ARG TARGETOS TARGETARCH
