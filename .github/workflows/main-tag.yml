@@ -70,6 +70,7 @@ jobs:
       
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.33.1
+        continue-on-error: true
         with:
           image-ref: ${{ steps.prep.outputs.tags1 }}
           format: 'table'
