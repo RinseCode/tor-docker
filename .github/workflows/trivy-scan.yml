@@ -15,6 +15,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: 'Get Recent tag'
+        id: recentTag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
 
       - name: Get tags to scan
         id: tags
@@ -22,22 +28,7 @@ jobs:
           REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE="ghcr.io/${REPO_OWNER}/tor"
           LATEST_TAG="latest"
-
-          # Build the path that the GHCR API expects: <owner>/tor
-          REPO_PATH="${REPO_OWNER}/tor"
-
-          # Fetch tags, fail fast if the request isn’t successful
-          RESPONSE=$(curl -sSf "https://ghcr.io/v2/${REPO_PATH}/tags/list")
-          if [[ -z "$RESPONSE" ]]; then
-            echo "Failed to fetch tags from GHCR"
-            exit 1
-          fi
-
-          # Extract and sort tags
-          TAGS=$(echo "$RESPONSE" | jq -r '.tags[]' | sort -Vr)
-
-          # Get the most recent non‑latest tag
-          RECENT_TAG=$(echo "$TAGS" | grep -v '^latest$' | head -n1)
+          RECENT_TAG=${{ steps.recentTag.outputs.tag }}
 
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
           echo "latest=$LATEST_TAG" >> $GITHUB_OUTPUT
