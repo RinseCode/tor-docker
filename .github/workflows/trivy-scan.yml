@@ -1,0 +1,57 @@
+name: Daily Trivy Scan
+
+on:
+  schedule:
+    # Runs every day at 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:   # optional: allow manual runs
+
+jobs:
+  trivy-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read   # needed to checkout the repo
+      packages: read   # needed to pull images from GitHub Container Registry (if used)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Get tags to scan
+        id: tags
+        run: |
+          # Example: scan the "latest" tag and the most recent tag from GitHub Container Registry
+          IMAGE="ghcr.io/${REPO_OWNER}/tor"
+          LATEST_TAG="latest"
+
+          # Pull the list of tags (requires `jq` and `curl`)
+          TAGS=$(curl -s "https://ghcr.io/v2/${IMAGE#*/}/tags/list" | jq -r '.tags[]' | sort -Vr)
+
+          # Get the most recent non‑latest tag (skip "latest")
+          RECENT_TAG=$(echo "$TAGS" | grep -v '^latest$' | head -n1)
+
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+          echo "latest=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "recent=$RECENT_TAG" >> $GITHUB_OUTPUT
+      
+      - name: Scan latest tag
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ${{ steps.tags.outputs.image }}:${{ steps.tags.outputs.latest }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+      
+      - name: Scan recent tag
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ${{ steps.tags.outputs.image }}:${{ steps.tags.outputs.recent }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'

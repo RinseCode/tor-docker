@@ -19,9 +19,7 @@ jobs:
         run: echo "tag=latest" >> ${GITHUB_OUTPUT}
 
       - name: Checkout
-        uses: actions/checkout@v2
-        # with:
-        #   ref: ${{ steps.vars.outputs.tag }}
+        uses: actions/checkout@v6
 
       - name: Prepare
         id: prep
@@ -71,3 +69,13 @@ jobs:
           platforms: ${{ steps.prep.outputs.platforms }}
           push: ${{ steps.prep.outputs.push }}
           tags: ${{ steps.prep.outputs.tags1 }}
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ${{ steps.prep.outputs.tags1 }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'

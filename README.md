@@ -1,7 +1,7 @@
 # tor-docker
 
-[![Build multiarch image - latest](https://github.com/bugfest/tor-docker/actions/workflows/main.yml/badge.svg)](https://github.com/bugfest/tor-docker/actions/workflows/main.yml)
-[![Build multiarch image - tag](https://github.com/bugfest/tor-docker/actions/workflows/main-tag.yml/badge.svg)](https://github.com/bugfest/tor-docker/actions/workflows/main-tag.yml)
+[![Build multiarch image - latest](https://github.com/RinseCode/tor-docker/actions/workflows/main.yml/badge.svg)](https://github.com/RinseCode/tor-docker/actions/workflows/main.yml)
+[![Build multiarch image - tag](https://github.com/RinseCode/tor-docker/actions/workflows/main-tag.yml/badge.svg)](https://github.com/RinseCode/tor-docker/actions/workflows/main-tag.yml)
 
 `Tor` daemon multiarch container.
 
@@ -44,7 +44,14 @@ Tor is an anonymity network that provides:
 Builds Tor from source. Method used to create releases in this repo.
 
 ```bash
-make
+docker buildx build \
+    --platform=linux/amd64,linux/arm,linux/arm64 \
+    --build-arg TOR_VERSION=0.4.8.21 \
+    --tag ghcr.io/rinsecode/tor:0.4.8.21 \
+    --tag ghcr.io/rinsecode/tor:latest \
+    --squash \
+    -f Dockerfile.quick \
+    .
 ```
 
 ## Quick build
@@ -54,7 +61,14 @@ Installs pre-built Tor from Alpine's repositories. Useful for testing/troublesho
 WARNING: some Tor features might be missing, depending on the [Alpine community build setup](https://github.com/alpinelinux/aports/tree/master/community/tor)
 
 ```bash
-make quick
+docker buildx build \
+    --platform=linux/amd64,linux/arm,linux/arm64 \
+    --build-arg TOR_VERSION=0.4.8.21 \
+    --tag ghcr.io/rinsecode/tor:0.4.8.21 \
+    --tag ghcr.io/rinsecode/tor:latest \
+    --squash \
+    -f Dockerfile \
+    .
 ```
 
 ## Usage
