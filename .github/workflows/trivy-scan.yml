@@ -21,6 +21,7 @@ jobs:
         id: tags
         run: |
           # Example: scan the "latest" tag and the most recent tag from GitHub Container Registry
+          REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE="ghcr.io/${REPO_OWNER}/tor"
           LATEST_TAG="latest"
 
