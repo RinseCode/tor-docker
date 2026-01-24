@@ -2,56 +2,55 @@ name: Release Version
 
 on:
   schedule:
-    - cron: '0 6 * * *' 
+    - cron: '0 6 * * *'   # runs daily at 06:00 UTC
   workflow_dispatch:
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v6
-      
-      - name: Get Version from Dockerfile
+        with:
+          fetch-depth: 0   # needed for tag/commit history
+
+      - name: Get TOR version from Dockerfile
         id: get_version
         run: |
-          TOR_VERSION=$(grep 'ARG TOR_VERSION' Dockerfile | cut -d '=' -f 2 | tr -d ' "')
+          TOR_VERSION=$(grep 'ARG TOR_VERSION' Dockerfile \
+                        | cut -d '=' -f2 \
+                        | tr -d ' "')
           echo "TOR_VERSION=$TOR_VERSION" >> $GITHUB_ENV
 
-      - name: Determine Release Version
+      - name: Determine next release tag
         id: release_version
         run: |
           VERSION="${TOR_VERSION}"
-          LAST_RELEASE=$(git tag --list "${VERSION}-r*" | sort -V | tail -n 1)
+          # Find the latest tag that matches the pattern <version>-r<number>
+          LAST_RELEASE=$(git tag --list "${VERSION}-r*" \
+                         | sort -V \
+                         | tail -n 1)
 
-          # Check for newer commits since the last release
-          COMMITS=$(git log "${LAST_RELEASE}..HEAD" --oneline)
-          if [ -z "$COMMITS" ]; then
-            echo "No new commits since the last release."
-            exit 0  # Exit if no new commits
-          fi
-
-          # Start with *-r if a new tor version is released
+          # If there is no previous release, start at r1
           if [ -z "$LAST_RELEASE" ]; then
             NEW_VERSION="${VERSION}-r1"
           else
+            # Check for commits after the last release tag
+            COMMITS=$(git log "${LAST_RELEASE}..HEAD" --oneline)
+            if [ -z "$COMMITS" ]; then
+              echo "No new commits since ${LAST_RELEASE}. Skipping release."
+              exit 0
+            fi
+
+            # Increment the release counter
             LAST_R=${LAST_RELEASE#*-r}
             NEW_VERSION="${VERSION}-r$((LAST_R + 1))"
           fi
 
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      - name: Gather Commit Messages
-        id: get_commits
-        run: |
-          if [ -z "$LAST_RELEASE" ]; then
-            COMMITS=$(git log --oneline)
-          else
-            COMMITS=$(git log "${LAST_RELEASE}..HEAD" --oneline)
-          fi
-          echo "COMMITS=$COMMITS" >> $GITHUB_ENV
-
-      - name: Create Release
+      - name: Create GitHub release
+        if: env.NEW_VERSION != ''
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.NEW_VERSION }}
