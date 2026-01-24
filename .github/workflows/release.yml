@@ -56,3 +56,4 @@ jobs:
           tag_name: ${{ env.NEW_VERSION }}
           release_name: Release ${{ env.NEW_VERSION }}
           generate_release_notes: true
+          token: ${{ secrets.PAT_TOKEN }}
