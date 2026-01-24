@@ -1,0 +1,59 @@
+name: Release Version
+
+on:
+  schedule:
+    - cron: '0 6 * * *' 
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+      
+      - name: Get Version from Dockerfile
+        id: get_version
+        run: |
+          TOR_VERSION=$(grep 'ARG TOR_VERSION' Dockerfile | cut -d '=' -f 2 | tr -d ' "')
+          echo "TOR_VERSION=$TOR_VERSION" >> $GITHUB_ENV
+
+      - name: Determine Release Version
+        id: release_version
+        run: |
+          VERSION="${TOR_VERSION}"
+          LAST_RELEASE=$(git tag --list "${VERSION}-r*" | sort -V | tail -n 1)
+
+          # Check for newer commits since the last release
+          COMMITS=$(git log "${LAST_RELEASE}..HEAD" --oneline)
+          if [ -z "$COMMITS" ]; then
+            echo "No new commits since the last release."
+            exit 0  # Exit if no new commits
+          fi
+
+          # Start with *-r if a new tor version is released
+          if [ -z "$LAST_RELEASE" ]; then
+            NEW_VERSION="${VERSION}-r1"
+          else
+            LAST_R=${LAST_RELEASE#*-r}
+            NEW_VERSION="${VERSION}-r$((LAST_R + 1))"
+          fi
+
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Gather Commit Messages
+        id: get_commits
+        run: |
+          if [ -z "$LAST_RELEASE" ]; then
+            COMMITS=$(git log --oneline)
+          else
+            COMMITS=$(git log "${LAST_RELEASE}..HEAD" --oneline)
+          fi
+          echo "COMMITS=$COMMITS" >> $GITHUB_ENV
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.NEW_VERSION }}
+          release_name: Release ${{ env.NEW_VERSION }}
+          generate_release_notes: true
