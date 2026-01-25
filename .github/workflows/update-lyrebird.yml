@@ -105,4 +105,5 @@ jobs:
             - **New tag:** ${{ steps.gitlab_tag.outputs.clean_tag }}
 
           commit-message: "Update Dockerfile ARG LYREBIRD_VERSION to ${{ steps.gitlab_tag.outputs.clean_tag }}"
+          labels: dependencies
           delete-branch: true
