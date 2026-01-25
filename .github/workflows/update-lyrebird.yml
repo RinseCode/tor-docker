@@ -26,8 +26,7 @@ jobs:
       - name: Fetch latest GitLab tag (lyrebird)
         id: gitlab_tag
         run: |
-          # Project: tpo/anti-censorship/pluggable-transports/lyrebird
-          GITLAB_PROJECT="tpo%2Fanti-censorship%2Fpluggable-transports%2Flyrebird"
+          GITLAB_PROJECT="tpo%2Fanti-censorship%2Fpluggable-transports%2Flyrebird"  # URL‑encoded namespace/project
           GITLAB_API="https://gitlab.torproject.org/api/v4/projects/${GITLAB_PROJECT}/repository/tags"
 
           # Get the newest tag name
@@ -42,13 +41,10 @@ jobs:
       - name: Read current Dockerfile LYREBIRD_VERSION
         id: docker_tag
         run: |
-          DOCKERFILE="Dockerfile"
-
-          current_tag=$(grep -E '^ARG\s+LYREBIRD_VERSION=' "$DOCKERFILE" \
+          current_tag=$(grep -E '^ARG\s+LYREBIRD_VERSION=' Dockerfile \
                          | head -n1 \
                          | cut -d'=' -f2 \
-                         | tr -d '"' \
-                         | tr -d "'")
+                         | tr -d '"' | tr -d "'")
           echo "current_tag=$current_tag" >> $GITHUB_OUTPUT
 
       - name: Update Dockerfile if needed
@@ -73,29 +69,47 @@ jobs:
 
           # Replace the ARG line (assumes a single version ARG)
           sed -i -E "s/^(ARG\s+LYREBIRD_VERSION)=.*/\1=$LATEST_TAG/" Dockerfile
-          sed -i -E "s/^(ARG\s+LYREBIRD_VERSION)=.*/\1=$LATEST_TAG/" Dockerfile.quick
+          sed -i -E "s/^(ARG\s+LYREBIRD_VERSION)=.*/\1=$LATEST_TAG/" Dockerfile.lyrebird
           echo "changed=true" >> $GITHUB_OUTPUT
 
+      - name: Check for existing open PR
+        id: pr_check
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: `${context.repo.owner}:update-lyrebird-tag`
+            })
+            core.setOutput('pr_exists', prs.length > 0 ? 'true' : 'false')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create branch, commit & push
-        if: steps.update.outputs.changed == 'true'
+        if: steps.update.outputs.changed == 'true' && steps.pr_check.outputs.pr_exists == 'false'
         env:
           GIT_AUTHOR_NAME: github-actions[bot]
-          GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
         run: |
-          BRANCH="update-lyrebird-tag-$(date +%s)"
+          BRANCH="update-lyrebird-tag"
           git config user.name "$GIT_AUTHOR_NAME"
           git config user.email "$GIT_AUTHOR_EMAIL"
+          # Delete local branch if it already exists (e.g. from a previous run)
+          git branch -D "$BRANCH" || true
           git checkout -b "$BRANCH"
           git add Dockerfile Dockerfile.quick
           git commit -m "Update Dockerfile ARG LYREBIRD_VERSION to ${{ steps.gitlab_tag.outputs.clean_tag }}"
-          git push origin "$BRANCH"
+          # Force-push so an existing open PR is automatically updated
+          git push origin "$BRANCH" --force
 
       - name: Create Pull Request
-        if: steps.update.outputs.changed == 'true'
+        id: cpr
+        if: steps.update.outputs.changed == 'true' && steps.pr_check.outputs.pr_exists == 'false'
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: "update-lyrebird-tag-${{ steps.update.outputs.branch || ''}}"
+          branch: update-lyrebird-tag
           base: master
           title: "Update Dockerfile ARG LYREBIRD_VERSION to ${{ steps.gitlab_tag.outputs.clean_tag }}"
           body: |
@@ -103,7 +117,13 @@ jobs:
 
             - **Previous tag:** ${{ steps.docker_tag.outputs.current_tag }}
             - **New tag:** ${{ steps.gitlab_tag.outputs.clean_tag }}
-
           commit-message: "Update Dockerfile ARG LYREBIRD_VERSION to ${{ steps.gitlab_tag.outputs.clean_tag }}"
           labels: dependencies
           delete-branch: true
+
+      - name: Enable Pull Request Automerge
+        if: steps.cpr.outputs.pull-request-operation == 'created'
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+          merge-method: squash
