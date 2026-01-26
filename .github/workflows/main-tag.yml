@@ -41,7 +41,7 @@ jobs:
           else
             echo "push=true" >> $GITHUB_OUTPUT
             # Pass both tags as a newline-separated list
-            echo -e "tags=${TAG_FULL}%0A${TAG_PLAIN}" >> $GITHUB_OUTPUT
+            echo "tag_plain=${TAG_PLAIN}" >> $GITHUB_OUTPUT
             echo "tag_full=${TAG_FULL}" >> $GITHUB_OUTPUT
           fi
 
@@ -84,8 +84,10 @@ jobs:
           platforms: ${{ steps.prep.outputs.platforms }}
           push: ${{ steps.prep.outputs.push }}
           tags: |
-            ${{ steps.prep.outputs.tags }}
-            ghcr.io/${{ steps.prep.outputs.tags }}
+            ${{ steps.prep.outputs.tag_plain }}
+            ${{ steps.prep.outputs.tag_full }}
+            ghcr.io/${{ steps.prep.outputs.tag_plain }}
+            ghcr.io/${{ steps.prep.outputs.tag_full }}
       
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.33.1
