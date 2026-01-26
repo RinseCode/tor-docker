@@ -67,10 +67,20 @@ jobs:
             exit 0
           fi
 
-          # Replace the ARG line (assumes a single version ARG)
+          # Update Dockerfile(s)
           sed -i -E "s/^(ARG\s+TOR_VERSION)=.*/\1=$LATEST_TAG/" Dockerfile
           sed -i -E "s/^(ARG\s+TOR_VERSION)=.*/\1=$LATEST_TAG/" Dockerfile.quick
           echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Update README.md version badge
+        if: steps.update.outputs.changed == 'true'
+        id: readme_update
+        env:
+          LATEST_TAG: ${{ steps.gitlab_tag.outputs.clean_tag }}
+        run: |
+          sed -i -E "s/(--build-arg TOR_VERSION=)[0-9\.]+/\1$LATEST_TAG/g" README.md
+          sed -i -E "s|(ghcr\.io/rinsecode/tor:)[0-9\.]+|\1$LATEST_TAG|g" README.md
+          echo "readme_changed=true" >> $GITHUB_OUTPUT
 
       - name: Check for existing open PR
         id: pr_check
@@ -99,7 +109,7 @@ jobs:
           # Delete local branch if it already exists (e.g. from a previous run)
           git branch -D "$BRANCH" || true
           git checkout -b "$BRANCH"
-          git add Dockerfile Dockerfile.quick
+          git add Dockerfile Dockerfile.quick README.md
           git commit -m "Update Dockerfile ARG TOR_VERSION to ${{ steps.gitlab_tag.outputs.clean_tag }}"
           # Force-push so an existing open PR is automatically updated
           git push origin "$BRANCH" --force
@@ -111,13 +121,17 @@ jobs:
         with:
           branch: update-tor-tag
           base: master
-          title: "Update Dockerfile ARG TOR_VERSION to ${{ steps.gitlab_tag.outputs.clean_tag }}"
+          title: "Update TOR_VERSION to ${{ steps.gitlab_tag.outputs.clean_tag }}"
           body: |
-            This PR updates the `ARG TOR_VERSION` line in `Dockerfile` to the latest tag from the GitLab repository, with the `tor-` prefix removed.
+            This PR updates:
 
-            - **Previous tag:** ${{ steps.docker_tag.outputs.current_tag }}
-            - **New tag:** ${{ steps.gitlab_tag.outputs.clean_tag }}
-          commit-message: "Update Dockerfile ARG TOR_VERSION to ${{ steps.gitlab_tag.outputs.clean_tag }}"
+            - **Dockerfile** `ARG TOR_VERSION` line
+            - **README.md** example build commands
+
+            - Previous tag: ${{ steps.docker_tag.outputs.current_tag }}
+            - New tag: ${{ steps.gitlab_tag.outputs.clean_tag }}
+
+          commit-message: "Update TOR_VERSION to ${{ steps.gitlab_tag.outputs.clean_tag }}"
           labels: dependencies
           delete-branch: true
 

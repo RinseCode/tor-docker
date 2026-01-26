@@ -11,7 +11,12 @@ jobs:
 
       - name: Get latest tag
         id: vars
-        run: echo "tag=${GITHUB_REF:10}" >> ${GITHUB_OUTPUT}
+        run: |
+          # Full tag, e.g. 0.4.8.21-r2
+          echo "tag=${GITHUB_REF:10}" >> $GITHUB_OUTPUT
+          # Strip everything after the first “-” (or keep the whole string if no “-”)
+          echo "base_tag=$(echo "${GITHUB_REF:10}" | cut -d'-' -f1)" >> $GITHUB_OUTPUT
+
 
       - name: Checkout
         uses: actions/checkout@v6
@@ -22,18 +27,25 @@ jobs:
         id: prep
         run: |
           BUILD_DATE=$(date --rfc-3339=seconds --utc)
-          echo "build_date=${BUILD_DATE}" >> ${GITHUB_OUTPUT}
+          echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
           PLATFORMS=amd64,arm,arm64
           REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          TAGS1="${REPO_OWNER}/tor:${{ steps.vars.outputs.tag }}"
+          
+          # Full tag (with -rX)
+          TAG_FULL="${REPO_OWNER}/tor:${{ steps.vars.outputs.tag }}"
+          # Plain tag (without -rX)
+          TAG_PLAIN="${REPO_OWNER}/tor:${{ steps.vars.outputs.base_tag }}"
+
           if [ "${{github.event_name}}" == "pull_request" ]; then
-                echo "push=false" >> ${GITHUB_OUTPUT}
-              else
-                echo "push=true" >> ${GITHUB_OUTPUT}
-                echo "tags1=${TAGS1}" >> ${GITHUB_OUTPUT}
-                echo "branch=${GIT_BRANCH}" >> ${GITHUB_OUTPUT}
+            echo "push=false" >> $GITHUB_OUTPUT
+          else
+            echo "push=true" >> $GITHUB_OUTPUT
+            # Pass both tags as a newline-separated list
+            echo -e "tags=${TAG_FULL}\n${TAG_PLAIN}" >> $GITHUB_OUTPUT
+            echo tagFull=${TAG_FULL}
           fi
-          echo "platforms=${PLATFORMS}" >> ${GITHUB_OUTPUT}
+
+          echo "platforms=${PLATFORMS}" >> $GITHUB_OUTPUT
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -72,14 +84,14 @@ jobs:
           platforms: ${{ steps.prep.outputs.platforms }}
           push: ${{ steps.prep.outputs.push }}
           tags: |
-            ${{ steps.prep.outputs.tags1 }}
-            ghcr.io/${{ steps.prep.outputs.tags1 }}
+            ${{ steps.prep.outputs.tags }}
+            ghcr.io/${{ steps.prep.outputs.tags }}
       
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.33.1
         continue-on-error: true
         with:
-          image-ref: ${{ steps.prep.outputs.tags1 }}
+          image-ref: ghcr.io/${{ steps.prep.outputs.tagFull }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true

@@ -4,6 +4,8 @@
 [![Build multiarch image - tag](https://github.com/RinseCode/tor-docker/actions/workflows/main-tag.yml/badge.svg)](https://github.com/RinseCode/tor-docker/actions/workflows/main-tag.yml)
 
 `Tor` daemon multiarch container.
+All depedencie updates are automated.
+So if a new tor version is released the docker image will be updated and released.
 
 Additional transport plugins included in the image:
 
@@ -26,7 +28,7 @@ Downloads:
 
 Used by:
 
-- [bugfest/tor-controller](https://github.com/bugfest/tor-controller)
+- [RinseCode/tor-controller](https://github.com/RinseCode/tor-controller)
 
 ## Tor
 
@@ -74,5 +76,5 @@ docker buildx build \
 ## Usage
 
 ```shell
-docker pull ghcr.io/rinsecode/tor
+docker pull ghcr.io/rinsecode/tor:0.4.8.21
 ```
