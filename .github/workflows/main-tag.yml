@@ -41,7 +41,7 @@ jobs:
           else
             echo "push=true" >> $GITHUB_OUTPUT
             # Pass both tags as a newline-separated list
-            echo -e "tags=${TAG_FULL}\n${TAG_PLAIN}" >> $GITHUB_OUTPUT
+            echo -e "tags=${TAG_FULL}%0A${TAG_PLAIN}" >> $GITHUB_OUTPUT
             echo "tag_full=${TAG_FULL}" >> $GITHUB_OUTPUT
           fi
 
