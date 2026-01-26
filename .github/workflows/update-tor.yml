@@ -3,7 +3,7 @@ name: Update Dockerfile ARG TOR_VERSION
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 2 * * *'   # daily at 02:00 UTC
+    - cron: '42 7,17 * * *' # Twice a day
 
 jobs:
   update-tag:

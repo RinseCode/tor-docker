@@ -3,7 +3,7 @@ name: Update Dockerfile ARG LYREBIRD_VERSION
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 2 * * *'   # daily at 02:00 UTC
+    - cron: '48 7,17 * * *' # Twice a day
 
 jobs:
   update-tag:

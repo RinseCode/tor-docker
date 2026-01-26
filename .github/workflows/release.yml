@@ -2,7 +2,7 @@ name: Release Version
 
 on:
   schedule:
-    - cron: '0 6 * * *'   # runs daily at 06:00 UTC
+    - cron: '44 10,20 * * *'   # Twice a day
   workflow_dispatch:
 
 jobs:
