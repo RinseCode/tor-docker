@@ -42,7 +42,7 @@ jobs:
             echo "push=true" >> $GITHUB_OUTPUT
             # Pass both tags as a newline-separated list
             echo -e "tags=${TAG_FULL}\n${TAG_PLAIN}" >> $GITHUB_OUTPUT
-            echo "tagFull=${TAG_FULL}" >> $GITHUB_OUTPUT
+            echo "tag_full=${TAG_FULL}" >> $GITHUB_OUTPUT
           fi
 
           echo "platforms=${PLATFORMS}" >> $GITHUB_OUTPUT
@@ -91,7 +91,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.33.1
         continue-on-error: true
         with:
-          image-ref: ghcr.io/${{ steps.prep.outputs.tagFull }}
+          image-ref: ghcr.io/${{ steps.prep.outputs.tag_full }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
