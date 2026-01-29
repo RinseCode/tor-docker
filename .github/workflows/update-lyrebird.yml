@@ -26,26 +26,31 @@ jobs:
       - name: Fetch latest GitLab tag (lyrebird)
         id: gitlab_tag
         run: |
-          GITLAB_PROJECT="tpo%2Fanti-censorship%2Fpluggable-transports%2Flyrebird"  # URL‑encoded namespace/project
+          GITLAB_PROJECT="tpo%2Fanti-censorship%2Fpluggable-transports%2Flyrebird"  # URL-encoded namespace/project
           GITLAB_API="https://gitlab.torproject.org/api/v4/projects/${GITLAB_PROJECT}/repository/tags"
 
-          # Get the newest tag name
-          raw_tag=$(curl -sSf "$GITLAB_API" | jq -r '.[0].name')
+          # Retrieve **all** tags (newest first)
+          tags=$(curl -sSf "$GITLAB_API" | jq -r '.[].name')
 
-          # Remove a leading "lyrebird-" if present
-          clean_tag=${raw_tag#lyrebird-}
+          # Find the first tag that is not a pre-release
+          for raw_tag in $tags; do
+            # Strip optional leading “lyrebird-”
+            clean_tag=${raw_tag#lyrebird-}
 
-          echo "raw_tag=$raw_tag" >> $GITHUB_OUTPUT
-          echo "clean_tag=$clean_tag" >> $GITHUB_OUTPUT
+            # Skip tags ending with -rc* or -alpha*
+            if [[ "$clean_tag" =~ -rc| -alpha ]]; then
+              continue
+            fi
 
-      - name: Read current Dockerfile LYREBIRD_VERSION
-        id: docker_tag
-        run: |
-          current_tag=$(grep -E '^ARG\s+LYREBIRD_VERSION=' Dockerfile \
-                         | head -n1 \
-                         | cut -d'=' -f2 \
-                         | tr -d '"' | tr -d "'")
-          echo "current_tag=$current_tag" >> $GITHUB_OUTPUT
+            # This is the newest stable tag - stop looping
+            echo "selected_raw=$raw_tag"
+            echo "selected_clean=$clean_tag"
+            break
+          done
+
+          # Export for later steps
+          echo "raw_tag=$selected_raw"   >> $GITHUB_OUTPUT
+          echo "clean_tag=$selected_clean" >> $GITHUB_OUTPUT
 
       - name: Update Dockerfile if needed
         id: update
@@ -72,41 +77,9 @@ jobs:
           sed -i -E "s/^(ARG\s+LYREBIRD_VERSION)=.*/\1=$LATEST_TAG/" Dockerfile.lyrebird
           echo "changed=true" >> $GITHUB_OUTPUT
 
-      - name: Check for existing open PR
-        id: pr_check
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const { data: prs } = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              head: `${context.repo.owner}:update-lyrebird-tag`
-            })
-            core.setOutput('pr_exists', prs.length > 0 ? 'true' : 'false')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create branch, commit & push
-        if: steps.update.outputs.changed == 'true' && steps.pr_check.outputs.pr_exists == 'false'
-        env:
-          GIT_AUTHOR_NAME: github-actions[bot]
-          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
-        run: |
-          BRANCH="update-lyrebird-tag"
-          git config user.name "$GIT_AUTHOR_NAME"
-          git config user.email "$GIT_AUTHOR_EMAIL"
-          # Delete local branch if it already exists (e.g. from a previous run)
-          git branch -D "$BRANCH" || true
-          git checkout -b "$BRANCH"
-          git add Dockerfile Dockerfile.quick
-          git commit -m "Update Dockerfile ARG LYREBIRD_VERSION to ${{ steps.gitlab_tag.outputs.clean_tag }}"
-          # Force-push so an existing open PR is automatically updated
-          git push origin "$BRANCH" --force
-
       - name: Create Pull Request
         id: cpr
-        if: steps.update.outputs.changed == 'true' && steps.pr_check.outputs.pr_exists == 'false'
+        if: steps.update.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v8
         with:
           branch: update-lyrebird-tag
