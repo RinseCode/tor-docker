@@ -49,6 +49,15 @@ jobs:
             break
           done
 
+      - name: Read current Dockerfile LYREBIRD_VERSION
+        id: docker_tag
+        run: |
+          current_tag=$(grep -E '^ARG\s+LYREBIRD_VERSION=' Dockerfile \
+                         | head -n1 \
+                         | cut -d'=' -f2 \
+                         | tr -d '"' | tr -d "'")
+          echo "current_tag=$current_tag" >> $GITHUB_OUTPUT
+
       - name: Update Dockerfile if needed
         id: update
         env:
