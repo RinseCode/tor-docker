@@ -37,8 +37,8 @@ jobs:
             # Strip optional leading “lyrebird-”
             clean_tag=${raw_tag#lyrebird-}
 
-            # Skip tags ending with -rc* or -alpha*
-            if [[ "$clean_tag" =~ -rc| -alpha ]]; then
+            # Skip tags that contain “-rc” or “-alpha”
+            if [[ "$clean_tag" == *-rc* || "$clean_tag" == *-alpha* ]]; then
               continue
             fi
 

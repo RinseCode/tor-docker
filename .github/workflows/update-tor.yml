@@ -26,21 +26,23 @@ jobs:
       - name: Fetch latest GitLab tag (tor)
         id: gitlab_tag
         run: |
-          GITLAB_PROJECT="tpo%2Fcore%2Ftor"   # URL-encoded namespace/project
+          GITLAB_PROJECT="tpo%2Fcore%2Ftor"   # URL‑encoded namespace/project
           GITLAB_API="https://gitlab.torproject.org/api/v4/projects/${GITLAB_PROJECT}/repository/tags"
 
           # Get the full tag list (newest first)
           tags=$(curl -sSf "$GITLAB_API" | jq -r '.[].name')
 
-          # Find the first tag that is not a pre-release
+          # Find the first tag that is not a pre‑release
           for raw_tag in $tags; do
             # Strip optional leading "tor-"
             clean_tag=${raw_tag#tor-}
-            # Skip if it ends with -rc… or -alpha…
-            if [[ "$clean_tag" =~ -rc| -alpha ]]; then
+
+            # Skip tags that contain “-rc” or “-alpha”
+            if [[ "$clean_tag" == *-rc* || "$clean_tag" == *-alpha* ]]; then
               continue
             fi
-            # This is the first stable tag - stop looping
+
+            # This is the first stable tag – stop looping
             echo "selected_raw=$raw_tag"
             echo "selected_clean=$clean_tag"
             break
