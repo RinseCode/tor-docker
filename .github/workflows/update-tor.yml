@@ -43,15 +43,11 @@ jobs:
             fi
 
             # This is the first stable tag – stop looping
-            echo "selected_raw=$raw_tag"
-            echo "selected_clean=$clean_tag"
+            # Export for later steps
+            echo "raw_tag=$raw_tag"   >> $GITHUB_OUTPUT
+            echo "clean_tag=$clean_tag" >> $GITHUB_OUTPUT
             break
           done
-
-          # Export for later steps
-          echo "raw_tag=$selected_raw"   >> $GITHUB_OUTPUT
-          echo "clean_tag=$selected_clean" >> $GITHUB_OUTPUT
-
 
       - name: Read current Dockerfile TOR_VERSION
         id: docker_tag
