@@ -118,5 +118,5 @@ jobs:
         if: steps.cpr.outputs.pull-request-operation == 'created'
         run: gh pr merge --merge --auto "$PR"
         env:
-          GH_TOKEN: ${{ secrets.PAT }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
           PR: ${{ steps.cpr.outputs.pull-request-number }}
