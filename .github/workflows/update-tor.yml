@@ -90,7 +90,7 @@ jobs:
           LATEST_TAG: ${{ steps.gitlab_tag.outputs.clean_tag }}
         run: |
           sed -i -E "s/(--build-arg TOR_VERSION=)[0-9\.]+/\1$LATEST_TAG/g" README.md
-          sed -i -E "s|(ghcr\.io/rinsecode/tor:)[0-9\.]+|\1$LATEST_TAG|g" README.md
+          sed -i -E "s|(rinsecode/tor:)[0-9\.]+|\1$LATEST_TAG|g" README.md
 
       - name: Create Pull Request
         id: cpr
@@ -116,7 +116,7 @@ jobs:
 
       - name: Enable Pull Request Automerge
         if: steps.cpr.outputs.pull-request-operation == 'created'
-        uses: peter-evans/enable-pull-request-automerge@v3
-        with:
-          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
-          merge-method: squash
+        run: gh pr merge --merge --auto "$PR"
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+          PR: ${{ steps.cpr.outputs.pull-request-number }}

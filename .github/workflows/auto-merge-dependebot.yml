@@ -10,7 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.actor == 'dependabot[bot]'
     steps:
-      - uses: peter-evans/enable-pull-request-automerge@v3
-        with:
-          pull-request-number: ${{ github.event.pull_request.number }}
-          merge-method: squash
+      - name: Enable Pull Request Automerge
+        run: gh pr merge --merge --auto "$PR"
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+          PR: ${{ github.event.pull_request.number }}

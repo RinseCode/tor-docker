@@ -88,7 +88,15 @@ jobs:
             ${{ steps.prep.outputs.tag_full }}
             ghcr.io/${{ steps.prep.outputs.tag_plain }}
             ghcr.io/${{ steps.prep.outputs.tag_full }}
-      
+   
+      - name: Docker Hub Description
+        uses: peter-evans/dockerhub-description@v5
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: rinsecode/tor
+          short-description: ${{ github.event.repository.description }}
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.33.1
         continue-on-error: true

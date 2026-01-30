@@ -11,6 +11,12 @@ Additional transport plugins included in the image:
 
 - `lyrebird`
 
+Tags:
+
+Tags ending with -r* represent immutable releases.
+Each release with this tag will have a higher version.
+Tags without -r* will be updated with every release of that version.
+
 Tested architectures:
 
 - `amd64`
@@ -76,5 +82,5 @@ docker buildx build \
 ## Usage
 
 ```shell
-docker pull ghcr.io/rinsecode/tor:0.4.8.22
+docker pull rinsecode/tor:0.4.8.22
 ```
