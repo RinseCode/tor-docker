@@ -11,7 +11,7 @@ jobs:
     if: github.actor == 'dependabot[bot]'
     steps:
       - name: Enable Pull Request Automerge
-        run: gh pr merge --merge --auto "$PR"
-        env:
-          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
-          PR: ${{ github.event.pull_request.number }}
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          pull-request-number: ${{ github.event.pull_request.number }}
+          token: ${{ secrets.PAT_TOKEN }}
