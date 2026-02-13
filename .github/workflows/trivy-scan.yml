@@ -37,7 +37,7 @@ jobs:
       - name: Scan latest tag
         id: scanLatest
         continue-on-error: true
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.34.0
         with:
           image-ref: ${{ steps.tags.outputs.image }}:${{ steps.tags.outputs.latest }}
           format: 'table'
@@ -49,7 +49,7 @@ jobs:
       - name: Scan recent tag
         id: scanRecent
         continue-on-error: true
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.34.0
         with:
           image-ref: ${{ steps.tags.outputs.image }}:${{ steps.tags.outputs.recent }}
           format: 'table'
