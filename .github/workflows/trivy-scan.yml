@@ -20,7 +20,7 @@ jobs:
 
       - name: 'Get Recent tag'
         id: recentTag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        uses: "WyriHaximus/github-action-get-previous-tag@v2"
 
       - name: Get tags to scan
         id: tags
