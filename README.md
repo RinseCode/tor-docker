@@ -54,8 +54,8 @@ Builds Tor from source. Method used to create releases in this repo.
 ```bash
 docker buildx build \
     --platform=linux/amd64,linux/arm,linux/arm64 \
-    --build-arg TOR_VERSION=0.4.8.22 \
-    --tag ghcr.io/rinsecode/tor:0.4.8.22 \
+    --build-arg TOR_VERSION=0.4.9.5 \
+    --tag ghcr.io/rinsecode/tor:0.4.9.5 \
     --tag ghcr.io/rinsecode/tor:latest \
     --squash \
     -f Dockerfile.quick \
@@ -71,8 +71,8 @@ WARNING: some Tor features might be missing, depending on the [Alpine community 
 ```bash
 docker buildx build \
     --platform=linux/amd64,linux/arm,linux/arm64 \
-    --build-arg TOR_VERSION=0.4.8.22 \
-    --tag ghcr.io/rinsecode/tor:0.4.8.22 \
+    --build-arg TOR_VERSION=0.4.9.5 \
+    --tag ghcr.io/rinsecode/tor:0.4.9.5 \
     --tag ghcr.io/rinsecode/tor:latest \
     --squash \
     -f Dockerfile \
@@ -82,5 +82,5 @@ docker buildx build \
 ## Usage
 
 ```shell
-docker pull rinsecode/tor:0.4.8.22
+docker pull rinsecode/tor:0.4.9.5
 ```
