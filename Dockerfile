@@ -24,7 +24,7 @@ RUN ./configure \
       make install
 
 # Build the lyrebird binary (cross-compiling)
-FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125 AS lyrebird-builder
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:e9bbdf282b51ac8b34c46e5f31d2d56e7bad60366c35f08d2f295b921b13388b AS lyrebird-builder
 ARG LYREBIRD_VERSION="0.8.1"
 
 WORKDIR /lyrebird
