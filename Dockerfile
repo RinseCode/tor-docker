@@ -25,7 +25,7 @@ RUN ./configure \
 
 # Build the lyrebird binary (cross-compiling)
 FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS lyrebird-builder
-ARG LYREBIRD_VERSION="0.8.1"
+ARG LYREBIRD_VERSION=0.9.0
 
 WORKDIR /lyrebird
 RUN apk add --update --no-cache git && \
