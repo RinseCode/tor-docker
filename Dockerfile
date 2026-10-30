@@ -1,7 +1,7 @@
 # Tor builder
 FROM docker.io/library/alpine:3.24.3@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS tor-builder
 
-ARG TOR_VERSION=0.4.9.8
+ARG TOR_VERSION=0.4.9.15
 RUN apk add --update --no-cache \
     git build-base automake autoconf make \
     build-base openssl-dev libevent-dev zlib-dev \
