@@ -1,5 +1,5 @@
 # Tor builder
-FROM docker.io/library/alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS tor-builder
+FROM docker.io/library/alpine:3.24.3@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS tor-builder
 
 ARG TOR_VERSION=0.4.9.8
 RUN apk add --update --no-cache \
@@ -37,7 +37,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-X main.lyrebirdVersion=$(VERSION)" ./cmd/lyrebird
 
 # Tor runner
-FROM docker.io/library/alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS runner
+FROM docker.io/library/alpine:3.24.3@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS runner
 
 LABEL org.opencontainers.image.source="https://github.com/rinsecode/tor-docker"
 
